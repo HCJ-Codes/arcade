@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hurdles" />
+  <meta name="theme-color" content="#2d1b69" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <title>Henry's Hurdles</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html { background: #1a1035; height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: radial-gradient(ellipse at top, #2d1b69 0%, #1a1035 60%, #0d0820 100%);
+      height: 100dvh; color: #fff;
+      overflow: hidden; user-select: none; touch-action: manipulation;
+      position: relative;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 40% 10%, rgba(255,255,255,.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 25%, rgba(255,255,255,.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 75%, rgba(255,255,255,.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 85%, rgba(255,255,255,.4) 0%, transparent 100%),
+        radial-gradient(2px 2px at 50% 30%, rgba(255,255,180,.7) 0%, transparent 100%),
+        radial-gradient(2px 2px at 20% 55%, rgba(255,255,180,.5) 0%, transparent 100%),
+        radial-gradient(2px 2px at 75% 50%, rgba(255,255,180,.6) 0%, transparent 100%);
+    }
+
+    /* ===== SCREEN SYSTEM ===== */
+    .screen { display: none; position: absolute; inset: 0; z-index: 1; }
+    .screen.active { display: flex; }
+
+    /* ===== HOME ===== */
+    #screen-home {
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: max(env(safe-area-inset-top), 40px) 24px max(env(safe-area-inset-bottom), 24px);
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    .home-inner {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px; width: 100%; max-width: 400px;
+    }
+    .home-icon { font-size: 72px; filter: drop-shadow(0 0 20px rgba(180,140,255,.6)); margin-bottom: 8px; }
+    h1.app-title {
+      font-size: clamp(32px, 8vw, 48px); font-weight: 900;
+      letter-spacing: -1px; text-align: center; line-height: 1.1;
+      background: linear-gradient(135deg, #c084fc 0%, #e879f9 40%, #f0abfc 70%, #fde68a 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; filter: drop-shadow(0 0 20px rgba(192,132,252,.4));
+    }
+    .tagline {
+      font-size: 15px; color: rgba(255,255,255,.55);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      width: 100%; padding: 18px 24px; border-radius: 20px; border: none;
+      font-size: 18px; font-weight: 700; font-family: inherit; color: #fff;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 12px; transition: transform .12s, opacity .12s;
+    }
+    .btn:active { transform: scale(.97); opacity: .9; }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      box-shadow: 0 4px 24px rgba(124,58,237,.5), inset 0 1px 0 rgba(255,255,255,.15);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.15);
+      color: rgba(255,255,255,.85);
+    }
+    .btn-icon { font-size: 22px; }
+    .divider { width: 100%; height: 1px; background: rgba(255,255,255,.08); margin: 4px 0; }
+    .no-puzzles { font-size: 13px; color: rgba(255,255,255,.35); text-align: center; padding: 4px 0; }
+
+    /* ===== SHARED CHROME ===== */
+    .chrome-header {
+      flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+      padding: max(env(safe-area-inset-top), 16px) 16px 12px;
+      background: rgba(13,8,32,.88);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    .chrome-footer {
+      flex: 0 0 auto; padding: 12px 16px max(env(safe-area-inset-bottom), 20px);
+      background: rgba(13,8,32,.88);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+    .back-btn {
+      background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.12);
+      border-radius: 12px; color: #fff; font-size: 20px; font-family: inherit;
+      width: 44px; height: 44px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; flex-shrink: 0;
+    }
+    .back-btn:active { opacity: .65; }
+
+    /* ===== CREATOR ===== */
+    #screen-creator { flex-direction: column; }
+    .step-meta { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .step-title-label { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.9); }
+    .step-dots { display: flex; gap: 5px; align-items: center; }
+    .step-dot { height: 6px; width: 6px; border-radius: 3px; background: rgba(255,255,255,.2); transition: all .2s; }
+    .step-dot.done { background: rgba(168,85,247,.7); }
+    .step-dot.current { background: #a855f7; width: 18px; }
+    .creator-scroll {
+      flex: 1 1 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* ===== PUZZLE LIST ===== */
+    #screen-puzzle-list { flex-direction: column; }
+    .list-header-title { font-size: 18px; font-weight: 800; }
+    .list-scroll {
+      flex: 1 1 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .puzzle-card {
+      background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 16px; padding: 16px 20px; cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .puzzle-card:active { background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.4); }
+    .puzzle-card-title { font-size: 16px; font-weight: 700; }
+    .puzzle-card-meta { font-size: 12px; color: rgba(255,255,255,.4); margin-top: 4px; }
+    .puzzle-card-arrow { font-size: 22px; opacity: .4; }
+    .puzzle-card-desc { font-size: 12px; color: rgba(255,255,255,.4); margin-top: 4px; font-style: italic; }
+    .empty-list { text-align: center; padding: 60px 20px; color: rgba(255,255,255,.35); font-size: 15px; line-height: 1.6; }
+    .empty-list-icon { font-size: 48px; margin-bottom: 12px; }
+
+    /* ===== CREATOR FORM ===== */
+    .step-intro { text-align: center; padding: 8px 0 16px; }
+    .step-emoji { font-size: 48px; margin-bottom: 8px; }
+    .step-intro h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .step-hint { font-size: 14px; color: rgba(255,255,255,.5); }
+    .entry-card {
+      background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .card-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(168,85,247,.9); }
+    .field-row { display: flex; gap: 8px; }
+    input[type="text"], select, textarea {
+      background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.12);
+      border-radius: 12px; padding: 12px 14px; color: #fff; font-size: 16px;
+      font-family: inherit; outline: none; -webkit-appearance: none; width: 100%;
+      transition: border-color .15s, background .15s;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+      border-color: rgba(168,85,247,.6); background: rgba(168,85,247,.08);
+    }
+    ::placeholder { color: rgba(255,255,255,.28); }
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
+    }
+    textarea { resize: none; min-height: 70px; }
+    .toggle-group { display: flex; gap: 8px; }
+    .toggle-btn {
+      flex: 1; padding: 10px 8px; border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.6); font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: all .15s;
+    }
+    .toggle-btn.active {
+      background: linear-gradient(135deg, rgba(124,58,237,.4), rgba(168,85,247,.3));
+      border-color: rgba(168,85,247,.6); color: #fff;
+    }
+    .solution-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .solution-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.55); }
+    .pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.15);
+      border-radius: 20px; padding: 9px 16px; color: rgba(255,255,255,.8);
+      font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s;
+    }
+    .pill.pill-active {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border-color: transparent; color: #fff; box-shadow: 0 2px 12px rgba(124,58,237,.4);
+    }
+
+    /* ===== SOLVE SCREEN ===== */
+    #screen-solve { flex-direction: column; }
+
+    .solve-title-text {
+      flex: 1; font-size: 15px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .clues-btn {
+      background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.2);
+      border-radius: 12px; color: #fff; font-size: 13px; font-weight: 700;
+      font-family: inherit; padding: 8px 14px; cursor: pointer; white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .clues-btn:active { opacity: .7; }
+
+    .solve-scroll {
+      flex: 1 1 0; overflow: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px;
+    }
+
+    /* ===== LOGIC GRID ===== */
+    .grid-block { margin-bottom: 24px; }
+
+    .logic-table {
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .grid-corner { width: 84px; min-width: 84px; }
+
+    .cat-header {
+      text-align: center; font-size: 10px; font-weight: 800;
+      letter-spacing: .8px; text-transform: uppercase;
+      padding: 5px 2px 4px; border-bottom: 2px solid;
+    }
+    /* Per-category colours */
+    .ch-suspects { color: #c084fc; border-bottom-color: #c084fc; }
+    .ch-items     { color: #f87171; border-bottom-color: #f87171; }
+    .ch-locations { color: #4ade80; border-bottom-color: #4ade80; }
+    .ch-motives   { color: #60a5fa; border-bottom-color: #60a5fa; }
+
+    /* Thick right border between category blocks */
+    .cat-end { border-right: 2px solid rgba(255,255,255,.22) !important; }
+
+    .col-header {
+      width: 40px; min-width: 40px; max-width: 40px;
+      text-align: center; font-size: 9px; font-weight: 600;
+      color: rgba(255,255,255,.55); padding: 3px 1px 5px;
+      overflow: hidden; white-space: nowrap; text-overflow: clip;
+    }
+
+    .row-header {
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,.8);
+      padding: 3px 8px 3px 0; text-align: right;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 84px;
+      border-right: 2px solid rgba(255,255,255,.12);
+    }
+
+    .grid-cell {
+      width: 40px; min-width: 40px; height: 40px;
+      text-align: center; vertical-align: middle;
+      font-size: 18px; line-height: 1; cursor: pointer;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      transition: background .1s;
+      -webkit-user-select: none;
+    }
+    .grid-cell:active { opacity: .65; transform: scale(.9); }
+    .cell-yes { background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.35); }
+    .cell-no  { background: rgba(239,68,68,.15);  border-color: rgba(239,68,68,.3); }
+
+    /* Row separator between grid blocks */
+    .grid-sep { height: 10px; }
+
+    /* ===== CLUES PANEL ===== */
+    .clues-overlay {
+      display: none; position: absolute; inset: 0; z-index: 10;
+      background: rgba(0,0,0,.5); backdrop-filter: blur(2px);
+    }
+    .clues-overlay.open { display: block; }
+
+    .clues-panel {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 11;
+      background: #150d30;
+      border-top: 1.5px solid rgba(168,85,247,.35);
+      border-radius: 20px 20px 0 0;
+      padding-bottom: max(env(safe-area-inset-bottom), 20px);
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.32,0,.67,0);
+      max-height: 70dvh; display: flex; flex-direction: column;
+    }
+    .clues-panel.open { transform: translateY(0); }
+
+    .clues-panel-hdr {
+      flex: 0 0 auto; display: flex; align-items: center;
+      justify-content: space-between; padding: 16px 20px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      font-size: 17px; font-weight: 800;
+    }
+    .clues-close {
+      background: rgba(255,255,255,.1); border: none; border-radius: 50%;
+      color: #fff; font-size: 15px; width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-family: inherit;
+    }
+    .clues-body {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px 20px;
+    }
+    .clue-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 14px; margin-bottom: 8px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px; font-size: 15px; line-height: 1.5;
+      color: rgba(255,255,255,.85);
+    }
+    .clue-num {
+      font-size: 11px; font-weight: 800; color: rgba(168,85,247,.8);
+      min-width: 20px; padding-top: 3px; flex-shrink: 0;
+    }
+    .clue-final {
+      background: rgba(168,85,247,.14); border-color: rgba(168,85,247,.45);
+      font-weight: 600; color: #fff;
+    }
+    .clue-final .clue-num { color: #c084fc; }
+    .clue-placeholder {
+      text-align: center; padding: 32px 0;
+      color: rgba(255,255,255,.4); font-size: 15px; line-height: 1.7;
+    }
+
+    /* ===== WRONG CELL ===== */
+    .cell-wrong {
+      background: rgba(239,68,68,.35) !important;
+      border-color: rgba(239,68,68,.75) !important;
+      animation: shake .4s ease;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60%  { transform: translateX(-3px); }
+      40%,80%  { transform: translateX(3px); }
+    }
+
+    /* ===== WIN SCREEN ===== */
+    #screen-win {
+      flex-direction: column; align-items: center; justify-content: flex-start;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: max(env(safe-area-inset-top),40px) 24px max(env(safe-area-inset-bottom),32px);
+    }
+    .win-inner {
+      width: 100%; max-width: 480px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .win-icon { font-size: 80px; filter: drop-shadow(0 0 24px rgba(74,222,128,.5)); margin-bottom: 4px; }
+    .win-title {
+      font-size: 34px; font-weight: 900; text-align: center;
+      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .win-tagline { font-size: 15px; color: rgba(255,255,255,.55); text-align: center; }
+
+    .crime-card {
+      width: 100%; background: rgba(168,85,247,.1);
+      border: 1.5px solid rgba(168,85,247,.35); border-radius: 16px; padding: 16px 20px;
+    }
+    .crime-card-title {
+      font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+      color: rgba(168,85,247,.8); margin-bottom: 10px;
+    }
+    .crime-line { font-size: 16px; line-height: 1.7; color: rgba(255,255,255,.9); }
+    .crime-line strong { color: #fff; }
+
+    .section-label {
+      width: 100%; font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 4px;
+    }
+    .bij-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .bij-table th {
+      text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,.35);
+      padding: 6px 10px 6px 8px; border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .bij-table td { padding: 9px 10px 9px 8px; border-bottom: 1px solid rgba(255,255,255,.06); color: rgba(255,255,255,.8); vertical-align: middle; }
+    .bij-culprit td { color: #fff; font-weight: 700; background: rgba(168,85,247,.12); }
+    .bij-culprit td:first-child::before { content: '⚔️ '; }
+
+    /* ===== SYMBOL DRAWING ===== */
+    .sym-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding-top: 4px;
+    }
+    .sym-slot { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .sym-name {
+      font-size: 10px; color: rgba(255,255,255,.55); text-align: center;
+      width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sym-canvas {
+      width: 64px; height: 64px; border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,.18); touch-action: none; cursor: crosshair;
+      display: block;
+    }
+    .sym-canvas.has-drawing { border-color: rgba(168,85,247,.5); }
+    .sym-clear {
+      font-size: 10px; padding: 3px 10px; border-radius: 6px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.45); font-family: inherit; cursor: pointer;
+    }
+    .sym-clear:active { background: rgba(239,68,68,.18); color: #f87171; }
+
+    /* ===== PUZZLE CARD ACTIONS ===== */
+    .puzzle-card-wrap { display: flex; flex-direction: column; }
+    .puzzle-card-main {
+      background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 16px 16px 0 0; padding: 16px 20px; cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .puzzle-card-main:active { background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.4); }
+    .puzzle-card-actions {
+      display: flex; border: 1.5px solid rgba(255,255,255,.1); border-top: none;
+      border-radius: 0 0 16px 16px; overflow: hidden;
+    }
+    .card-action-btn {
+      flex: 1; padding: 10px; background: rgba(255,255,255,.04);
+      border: none; border-left: 1px solid rgba(255,255,255,.08);
+      color: rgba(255,255,255,.6); font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: all .15s;
+    }
+    .card-action-btn:first-child { border-left: none; }
+    .card-action-btn:active { background: rgba(255,255,255,.12); }
+    .card-delete-btn { color: rgba(239,68,68,.7); }
+    .card-delete-btn.confirm { background: rgba(239,68,68,.18); color: #f87171; }
+
+    /* ===== FOOTER ROW ===== */
+    .footer-row { display: flex; gap: 10px; }
+    .btn-reset { width: auto; flex: 0 0 auto; font-size: 14px; padding: 14px 16px; border-radius: 16px; }
+    .btn-check { flex: 1; }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed; bottom: max(env(safe-area-inset-bottom), 32px); left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(20,12,45,.97); border: 1px solid rgba(168,85,247,.4);
+      border-radius: 14px; padding: 12px 20px; font-size: 15px; color: #fff;
+      opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+      z-index: 999; max-width: min(320px, calc(100vw - 32px)); text-align: center;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- ========== HOME ========== -->
+  <div id="screen-home" class="screen active">
+    <div class="home-inner">
+      <div class="home-icon">🔍</div>
+      <h1 class="app-title">Henry's Hurdles</h1>
+      <p class="tagline">Deduction Mysteries</p>
+      <button class="btn btn-primary" onclick="startCreator()">
+        <span class="btn-icon">✏️</span> Create a Puzzle
+      </button>
+      <div class="divider"></div>
+      <button class="btn btn-secondary" onclick="showPuzzleList()">
+        <span class="btn-icon">🧩</span> Solve a Puzzle
+      </button>
+      <p class="no-puzzles" id="puzzle-count-label"></p>
+    </div>
+  </div>
+
+  <!-- ========== CREATOR ========== -->
+  <div id="screen-creator" class="screen">
+    <div class="chrome-header">
+      <button class="back-btn" onclick="creatorBack()">←</button>
+      <div class="step-meta">
+        <div class="step-title-label" id="creator-step-label"></div>
+        <div class="step-dots" id="creator-step-dots"></div>
+      </div>
+    </div>
+    <div class="creator-scroll" id="creator-content"></div>
+    <div class="chrome-footer">
+      <button class="btn btn-primary" id="creator-next-btn" onclick="creatorNext()">Next →</button>
+    </div>
+  </div>
+
+  <!-- ========== PUZZLE LIST ========== -->
+  <div id="screen-puzzle-list" class="screen">
+    <div class="chrome-header">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <span class="list-header-title">🧩 Choose a Puzzle</span>
+      <button class="clues-btn" onclick="importPuzzle()">📥 Import</button>
+    </div>
+    <div class="list-scroll" id="list-content"></div>
+    <input type="file" id="import-input" accept=".json,application/json" style="display:none" onchange="handleImport(this)" />
+  </div>
+
+  <!-- ========== SOLVE ========== -->
+  <div id="screen-solve" class="screen">
+    <div class="chrome-header">
+      <button class="back-btn" onclick="exitSolve()">←</button>
+      <span class="solve-title-text" id="solve-title"></span>
+      <button class="clues-btn" onclick="openRef()">📊 Ref</button>
+      <button class="clues-btn" onclick="openClues()">📋 Clues</button>
+    </div>
+    <div class="solve-scroll" id="solve-grid"></div>
+    <div class="chrome-footer">
+      <div class="footer-row">
+        <button class="btn btn-secondary btn-reset" onclick="resetGrid()">↺ Reset</button>
+        <button class="btn btn-primary btn-check" onclick="checkAnswers()">✓ Check Answers</button>
+      </div>
+    </div>
+    <!-- Ref slide-up panel -->
+    <div class="clues-overlay" id="ref-overlay" onclick="closeRef()"></div>
+    <div class="clues-panel" id="ref-panel">
+      <div class="clues-panel-hdr">
+        <span>📊 Reference</span>
+        <button class="clues-close" onclick="closeRef()">✕</button>
+      </div>
+      <div class="clues-body" id="ref-body"></div>
+    </div>
+    <!-- Clues slide-up panel -->
+    <div class="clues-overlay" id="clues-overlay" onclick="closeClues()"></div>
+    <div class="clues-panel" id="clues-panel">
+      <div class="clues-panel-hdr">
+        <span>📋 Clues</span>
+        <button class="clues-close" onclick="closeClues()">✕</button>
+      </div>
+      <div class="clues-body" id="clues-body"></div>
+    </div>
+  </div>
+
+  <!-- ========== WIN ========== -->
+  <div id="screen-win" class="screen">
+    <div class="win-inner">
+      <div class="win-icon">🏆</div>
+      <h2 class="win-title">Mystery Solved!</h2>
+      <p class="win-tagline" id="win-tagline"></p>
+      <div class="crime-card" id="win-crime"></div>
+      <div class="section-label">Full Solution</div>
+      <table class="bij-table" id="win-bij-table"></table>
+      <button class="btn btn-primary" onclick="exitToList()" style="margin-top:8px">🔄 Solve Another</button>
+      <button class="btn btn-secondary" onclick="goHome()">🏠 Home</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    // ============================================================
+    // CONSTANTS
+    // ============================================================
+    const SIZES       = ['Shortest', 'Short', 'Tall', 'Tallest'];
+    const ZODIACS     = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+    const STEP_LABELS = ['📖 Title','🕵️ Suspects','🔪 Items','🗺️ Locations','💭 Motives','🎯 Solution','🎨 Symbols'];
+    const TOTAL_STEPS = 7;
+    const CAT_NAMES   = ['Suspects','Items','Locations','Motives'];
+    const CAT_CLS     = ['ch-suspects','ch-items','ch-locations','ch-motives'];
+    const CAT_KEYS    = ['suspects','items','locations','motives'];
+    // All 6 ordered pairs (low index × high index)
+    const PAIRS = ['0-1','0-2','0-3','1-2','1-3','2-3'];
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    let creatorData       = null;
+    let creatorStep       = 0;
+    let editingPuzzleIdx  = -1;
+    let currentPuzzle     = null;
+    let currentPuzzleIdx  = -1;
+    let gridState         = null;
+    let deleteConfirmIdx  = -1;
+    let deleteConfirmTimer = null;
+    let resetPending      = false;
+    let resetTimer        = null;
+
+    // ============================================================
+    // NAVIGATION
+    // ============================================================
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+    function goHome() {
+      showScreen('screen-home');
+      updatePuzzleCount();
+    }
+
+    // ============================================================
+    // STORAGE
+    // ============================================================
+    function loadPuzzles() {
+      return JSON.parse(localStorage.getItem('hurdles-puzzles') || '[]');
+    }
+    function storePuzzles(p) {
+      localStorage.setItem('hurdles-puzzles', JSON.stringify(p));
+    }
+    function updatePuzzleCount() {
+      const n = loadPuzzles().length;
+      document.getElementById('puzzle-count-label').textContent = n === 0
+        ? 'No puzzles yet — create one to get started!'
+        : `${n} puzzle${n !== 1 ? 's' : ''} saved`;
+    }
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function abbr(name, len = 6) {
+      const s = String(name);
+      return esc(s.length > len ? s.slice(0, len) + '…' : s);
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+    function showError(msg) { showToast('⚠️ ' + msg); }
+
+    // ============================================================
+    // CREATOR
+    // ============================================================
+    function freshData() {
+      return {
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        title: '',
+        storyDescription: '',
+        suspects:  Array.from({length:4}, () => ({name:'', size:'', eyeColor:'', hairColor:'', dominantHand:'right', zodiacSign:''})),
+        items:     Array.from({length:4}, () => ({name:'', material:'', weight:''})),
+        locations: Array.from({length:4}, () => ({name:'', indoorOutdoor:'indoor', description:''})),
+        motives:   Array.from({length:4}, () => ({name:''})),
+        solution: {suspectIndex:-1, itemIndex:-1, locationIndex:-1, motiveIndex:-1},
+        symbols: { suspects:[null,null,null,null], items:[null,null,null,null], locations:[null,null,null,null], motives:[null,null,null,null] }
+      };
+    }
+
+    function startCreator() {
+      creatorData = freshData();
+      creatorStep = 0;
+      editingPuzzleIdx = -1;
+      renderCreatorStep();
+      showScreen('screen-creator');
+    }
+
+    function renderCreatorStep() {
+      document.getElementById('creator-step-dots').innerHTML =
+        Array.from({length: TOTAL_STEPS}, (_, i) => {
+          const c = i < creatorStep ? 'done' : i === creatorStep ? 'current' : '';
+          return `<div class="step-dot ${c}"></div>`;
+        }).join('');
+      document.getElementById('creator-step-label').textContent =
+        `${STEP_LABELS[creatorStep]}  —  ${creatorStep + 1} of ${TOTAL_STEPS}`;
+      document.getElementById('creator-next-btn').textContent =
+        creatorStep === TOTAL_STEPS - 1 ? '💾 Save Puzzle' : 'Next →';
+      const renders = [renderTitle, renderSuspects, renderItems, renderLocations, renderMotives, renderSolution, renderSymbols];
+      const el = document.getElementById('creator-content');
+      el.innerHTML = renders[creatorStep]();
+      el.scrollTop = 0;
+      if (creatorStep === 6) setTimeout(initSymbolCanvases, 0);
+    }
+
+    function creatorNext() {
+      if (!validate()) return;
+      if (creatorStep === TOTAL_STEPS - 1) { savePuzzle(); return; }
+      creatorStep++;
+      renderCreatorStep();
+    }
+    function creatorBack() {
+      if (creatorStep === 0) { goHome(); return; }
+      creatorStep--;
+      renderCreatorStep();
+    }
+
+    function validate() {
+      const d = creatorData;
+      switch (creatorStep) {
+        case 0:
+          if (!d.title.trim()) { showError('Give your puzzle a title!'); return false; }
+          if (!(d.storyDescription||'').trim()) { showError('Add a short story description!'); return false; }
+          break;
+        case 1:
+          for (let i = 0; i < 4; i++) {
+            const sn = d.suspects[i].name || `Suspect ${i+1}`;
+            if (!d.suspects[i].name.trim())      { showError(`Name Suspect ${i+1}!`); return false; }
+            if (!d.suspects[i].size)             { showError(`Pick a size for ${sn}!`); return false; }
+            if (!d.suspects[i].eyeColor.trim())  { showError(`Eye color for ${sn}?`); return false; }
+            if (!d.suspects[i].hairColor.trim()) { showError(`Hair color for ${sn}?`); return false; }
+            if (!d.suspects[i].zodiacSign)       { showError(`Pick a zodiac sign for ${sn}!`); return false; }
+          }
+          if (new Set(d.suspects.map(s => s.size)).size < 4) {
+            showError('Each suspect must have a unique size!'); return false;
+          }
+          break;
+        case 2:
+          for (let i = 0; i < 4; i++) {
+            if (!d.items[i].name.trim())     { showError(`Name Item ${i+1}!`); return false; }
+            if (!d.items[i].material.trim()) { showError(`What is ${d.items[i].name || 'Item '+(i+1)} made of?`); return false; }
+            if (!d.items[i].weight)          { showError(`Pick a weight for ${d.items[i].name || 'Item '+(i+1)}!`); return false; }
+          }
+          break;
+        case 3:
+          for (let i = 0; i < 4; i++) {
+            if (!d.locations[i].name.trim()) { showError(`Name Location ${i+1}!`); return false; }
+          }
+          break;
+        case 4:
+          for (let i = 0; i < 4; i++) {
+            if (!d.motives[i].name.trim()) { showError(`Name Motive ${i+1}!`); return false; }
+          }
+          break;
+        case 5: {
+          const s = d.solution;
+          if (s.suspectIndex  < 0) { showError('Pick the culprit!');   return false; }
+          if (s.itemIndex     < 0) { showError('Pick the item used!'); return false; }
+          if (s.locationIndex < 0) { showError('Pick the location!');  return false; }
+          if (s.motiveIndex   < 0) { showError('Pick the motive!');    return false; }
+          break;
+        }
+      }
+      return true;
+    }
+
+    function savePuzzle() {
+      creatorData.clues = generateClues(creatorData);
+      const puzzles = loadPuzzles();
+      if (editingPuzzleIdx >= 0) {
+        // Clear old grid state if id changed (shouldn't, but guard anyway)
+        const old = puzzles[editingPuzzleIdx];
+        if (old && old.id !== creatorData.id) {
+          localStorage.removeItem('hurdles-grid-' + old.id);
+        }
+        // Also wipe saved grid so edits start fresh
+        localStorage.removeItem('hurdles-grid-' + creatorData.id);
+        puzzles[editingPuzzleIdx] = creatorData;
+        editingPuzzleIdx = -1;
+        storePuzzles(puzzles);
+        showPuzzleList();
+        showToast('✏️ Puzzle updated!');
+      } else {
+        puzzles.push(creatorData);
+        storePuzzles(puzzles);
+        goHome();
+        showToast('🎉 Puzzle saved!');
+      }
+    }
+
+    // ---- Step renderers ----
+    function renderTitle() {
+      const descLen = (creatorData.storyDescription || '').length;
+      return `
+        <div class="step-intro">
+          <div class="step-emoji">📖</div>
+          <h2>Name Your Mystery</h2>
+          <p class="step-hint">Give your puzzle a thrilling title!</p>
+        </div>
+        <div class="entry-card">
+          <input type="text" placeholder="e.g. The Mystery of the Missing Trophy"
+            value="${esc(creatorData.title)}"
+            oninput="creatorData.title=this.value" maxlength="80" />
+        </div>
+        <div class="entry-card">
+          <div class="card-label">Story</div>
+          <textarea placeholder="Briefly set the scene — what happened? (120 characters max)"
+            maxlength="120" rows="3"
+            oninput="creatorData.storyDescription=this.value;document.getElementById('story-count').textContent=this.value.length"
+          >${esc(creatorData.storyDescription || '')}</textarea>
+          <div style="text-align:right;font-size:11px;color:rgba(255,255,255,.3);margin-top:2px">
+            <span id="story-count">${descLen}</span>/120
+          </div>
+        </div>`;
+    }
+
+    function renderSuspects() {
+      return `
+        <div class="step-intro">
+          <div class="step-emoji">🕵️</div>
+          <h2>The Suspects</h2>
+          <p class="step-hint">4 suspects — each needs a unique size.</p>
+        </div>
+        ${creatorData.suspects.map((s,i) => `
+          <div class="entry-card">
+            <div class="card-label">Suspect ${i+1}</div>
+            <div class="field-row">
+              <input type="text" placeholder="Name" value="${esc(s.name)}"
+                oninput="creatorData.suspects[${i}].name=this.value" style="flex:1" />
+              <select onchange="creatorData.suspects[${i}].size=this.value" style="width:136px;flex-shrink:0">
+                <option value="" ${!s.size?'selected':''} disabled>Size…</option>
+                ${SIZES.map(sz=>`<option value="${sz}" ${s.size===sz?'selected':''}>${sz}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field-row">
+              <input type="text" placeholder="Eye color (e.g. blue)"
+                value="${esc(s.eyeColor||'')}" oninput="creatorData.suspects[${i}].eyeColor=this.value" />
+              <input type="text" placeholder="Hair color (e.g. brown)"
+                value="${esc(s.hairColor||'')}" oninput="creatorData.suspects[${i}].hairColor=this.value" />
+            </div>
+            <div class="field-row">
+              <select onchange="creatorData.suspects[${i}].zodiacSign=this.value" style="flex:1">
+                <option value="" ${!s.zodiacSign?'selected':''} disabled>Zodiac sign…</option>
+                ${ZODIACS.map(z=>`<option value="${z}" ${s.zodiacSign===z?'selected':''}>${z}</option>`).join('')}
+              </select>
+            </div>
+            <div class="toggle-group">
+              <button class="toggle-btn ${(s.dominantHand||'right')==='left'?'active':''}"
+                onclick="setField('suspects',${i},'dominantHand','left',this)">🤚 Left-handed</button>
+              <button class="toggle-btn ${(s.dominantHand||'right')==='right'?'active':''}"
+                onclick="setField('suspects',${i},'dominantHand','right',this)">✋ Right-handed</button>
+            </div>
+          </div>`).join('')}`;
+    }
+
+    function renderItems() {
+      return `
+        <div class="step-intro">
+          <div class="step-emoji">🔪</div>
+          <h2>The Items</h2>
+          <p class="step-hint">4 items used in the mystery. What is each made of?</p>
+        </div>
+        ${creatorData.items.map((it,i) => `
+          <div class="entry-card">
+            <div class="card-label">Item ${i+1}</div>
+            <div class="field-row">
+              <input type="text" placeholder="Name (e.g. Candlestick)"
+                value="${esc(it.name)}" oninput="creatorData.items[${i}].name=this.value" />
+              <input type="text" placeholder="Material (e.g. brass)"
+                value="${esc(it.material)}" oninput="creatorData.items[${i}].material=this.value"
+                style="width:130px;flex-shrink:0" />
+            </div>
+            <div class="toggle-group">
+              <button class="toggle-btn ${it.weight==='heavy'?'active':''}"
+                onclick="setField('items',${i},'weight','heavy',this)">🏋️ Heavy</button>
+              <button class="toggle-btn ${it.weight==='medium'?'active':''}"
+                onclick="setField('items',${i},'weight','medium',this)">⚖️ Medium</button>
+              <button class="toggle-btn ${it.weight==='light'?'active':''}"
+                onclick="setField('items',${i},'weight','light',this)">🪶 Light</button>
+            </div>
+          </div>`).join('')}`;
+    }
+
+    function renderLocations() {
+      return `
+        <div class="step-intro">
+          <div class="step-emoji">🗺️</div>
+          <h2>The Locations</h2>
+          <p class="step-hint">4 locations. Indoors or outdoors?</p>
+        </div>
+        ${creatorData.locations.map((loc,i) => `
+          <div class="entry-card">
+            <div class="card-label">Location ${i+1}</div>
+            <input type="text" placeholder="Name (e.g. Library, Garden…)"
+              value="${esc(loc.name)}" oninput="creatorData.locations[${i}].name=this.value" />
+            <div class="toggle-group">
+              <button class="toggle-btn ${loc.indoorOutdoor==='indoor'?'active':''}"
+                onclick="setIO(${i},'indoor',this)">🏠 Indoors</button>
+              <button class="toggle-btn ${loc.indoorOutdoor==='outdoor'?'active':''}"
+                onclick="setIO(${i},'outdoor',this)">🌳 Outdoors</button>
+            </div>
+          </div>`).join('')}`;
+    }
+
+    function setIO(i, val, btn) {
+      creatorData.locations[i].indoorOutdoor = val;
+      btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function setField(cat, idx, field, val, btn) {
+      creatorData[cat][idx][field] = val;
+      btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function renderMotives() {
+      return `
+        <div class="step-intro">
+          <div class="step-emoji">💭</div>
+          <h2>The Motives</h2>
+          <p class="step-hint">4 reasons someone might commit the crime.</p>
+        </div>
+        ${creatorData.motives.map((m,i) => `
+          <div class="entry-card">
+            <div class="card-label">Motive ${i+1}</div>
+            <input type="text" placeholder="e.g. Jealousy, Revenge, Greed, Curiosity…"
+              value="${esc(m.name)}" oninput="creatorData.motives[${i}].name=this.value" />
+          </div>`).join('')}`;
+    }
+
+    function renderSolution() {
+      const sol = creatorData.solution;
+
+      function row(label, key, items) {
+        return `
+          <div class="solution-row">
+            <div class="solution-label">${label}</div>
+            <div class="pill-group">
+              ${items.map((item,i) => `
+                <button class="pill ${sol[key]===i?'pill-active':''}"
+                  onclick="pickSol('${key}',${i},this)">${esc(item.name||'#'+(i+1))}</button>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      const randomizedBox = `
+        <div style="text-align:center;padding:20px 16px;background:rgba(168,85,247,.12);border:1.5px solid rgba(168,85,247,.3);border-radius:16px;">
+          <div style="font-size:32px;margin-bottom:8px">🎲</div>
+          <div style="font-weight:700;margin-bottom:4px">Solution randomized!</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.5)">The computer picked — go solve the mystery!</div>
+          <button class="btn btn-secondary" style="margin-top:14px;font-size:14px;padding:10px 16px"
+            onclick="clearRandomize()">Choose manually instead</button>
+        </div>`;
+
+      return `
+        <div class="step-intro">
+          <div class="step-emoji">🎯</div>
+          <h2>The Solution</h2>
+          <p class="step-hint">Pick each one yourself, or let the computer choose so you can solve it blind!</p>
+        </div>
+        <button class="btn btn-secondary" style="margin-bottom:8px" onclick="randomizeSolution()">
+          🎲 Randomize for Me
+        </button>
+        ${sol._randomized ? randomizedBox : `
+          ${row('🕵️ Culprit',   'suspectIndex',  creatorData.suspects)}
+          ${row('🔪 Item used', 'itemIndex',     creatorData.items)}
+          ${row('📍 Location',  'locationIndex', creatorData.locations)}
+          ${row('💭 Motive',    'motiveIndex',   creatorData.motives)}
+        `}`;
+    }
+
+    function randomizeSolution() {
+      const r = () => Math.floor(Math.random() * 4);
+      creatorData.solution = {
+        suspectIndex: r(), itemIndex: r(), locationIndex: r(), motiveIndex: r(),
+        _randomized: true
+      };
+      renderCreatorStep();
+    }
+
+    function clearRandomize() {
+      creatorData.solution = { suspectIndex:-1, itemIndex:-1, locationIndex:-1, motiveIndex:-1 };
+      renderCreatorStep();
+    }
+
+    function pickSol(key, idx, btn) {
+      creatorData.solution[key] = idx;
+      delete creatorData.solution._randomized;
+      btn.parentElement.querySelectorAll('.pill').forEach(p => p.classList.remove('pill-active'));
+      btn.classList.add('pill-active');
+    }
+
+    // ============================================================
+    // CREATOR — SYMBOLS STEP
+    // ============================================================
+    function renderSymbols() {
+      // Guard: old puzzles loaded for editing may not have symbols yet
+      if (!creatorData.symbols) {
+        creatorData.symbols = { suspects:[null,null,null,null], items:[null,null,null,null], locations:[null,null,null,null], motives:[null,null,null,null] };
+      }
+      const cats = [
+        { key:'suspects',  label:'🕵️ Suspects',  color:'#c084fc', items: creatorData.suspects },
+        { key:'items',     label:'🔪 Items',      color:'#f87171', items: creatorData.items },
+        { key:'locations', label:'🗺️ Locations',  color:'#4ade80', items: creatorData.locations },
+        { key:'motives',   label:'💭 Motives',    color:'#60a5fa', items: creatorData.motives },
+      ];
+      return `
+        <div class="step-intro">
+          <div class="step-emoji">🎨</div>
+          <h2>Draw Symbols</h2>
+          <p class="step-hint">Optional! Finger-draw an icon for each — they replace names in the grid.</p>
+        </div>
+        ${cats.map(cat => `
+          <div class="entry-card">
+            <div class="card-label" style="color:${cat.color}">${cat.label}</div>
+            <div class="sym-grid">
+              ${cat.items.map((item, i) => `
+                <div class="sym-slot">
+                  <div class="sym-name">${esc(item.name || '#'+(i+1))}</div>
+                  <canvas class="sym-canvas" id="sym-${cat.key}-${i}" width="128" height="128"></canvas>
+                  <button class="sym-clear" onclick="clearSymbol('${cat.key}',${i})">Clear</button>
+                </div>`).join('')}
+            </div>
+          </div>`).join('')}`;
+    }
+
+    function initSymbolCanvases() {
+      CAT_KEYS.forEach(key => {
+        for (let i = 0; i < 4; i++) {
+          const canvas = document.getElementById(`sym-${key}-${i}`);
+          if (!canvas) continue;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#0d0820';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          const stored = creatorData.symbols[key][i];
+          if (stored) {
+            const img = new Image();
+            img.onload = () => { ctx.drawImage(img, 0, 0); };
+            img.src = stored;
+            canvas.classList.add('has-drawing');
+          }
+          setupSymCanvas(canvas, key, i);
+        }
+      });
+    }
+
+    function setupSymCanvas(canvas, key, idx) {
+      let drawing = false;
+      const ctx = canvas.getContext('2d');
+      ctx.strokeStyle = '#e9d5ff';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      function getPos(touch) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: (touch.clientX - rect.left) * (canvas.width  / rect.width),
+          y: (touch.clientY - rect.top)  * (canvas.height / rect.height)
+        };
+      }
+
+      canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        drawing = true;
+        const p = getPos(e.touches[0]);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        // Draw a dot for taps
+        ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#e9d5ff';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (!drawing) return;
+        const p = getPos(e.touches[0]);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', e => {
+        e.preventDefault();
+        drawing = false;
+        creatorData.symbols[key][idx] = canvas.toDataURL('image/png');
+        canvas.classList.add('has-drawing');
+      }, { passive: false });
+    }
+
+    function clearSymbol(key, idx) {
+      const canvas = document.getElementById(`sym-${key}-${idx}`);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0d0820';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      creatorData.symbols[key][idx] = null;
+      canvas.classList.remove('has-drawing');
+    }
+
+    // ============================================================
+    // PUZZLE LIST
+    // ============================================================
+    function showPuzzleList() {
+      const puzzles = loadPuzzles();
+      const el = document.getElementById('list-content');
+      if (puzzles.length === 0) {
+        el.innerHTML = `<div class="empty-list"><div class="empty-list-icon">📭</div>No puzzles yet!<br>Create one first.</div>`;
+      } else {
+        el.innerHTML = [...puzzles].reverse().map((p, i) => {
+          const idx = puzzles.length - 1 - i;
+          return `
+            <div class="puzzle-card-wrap">
+              <div class="puzzle-card-main" onclick="openPuzzle(${idx})">
+                <div>
+                  <div class="puzzle-card-title">${esc(p.title || 'Untitled Mystery')}</div>
+                  <div class="puzzle-card-meta">${p.suspects.map(s=>esc(s.name)).filter(Boolean).join(' · ')}</div>
+                  ${p.storyDescription ? `<div class="puzzle-card-desc">${esc(p.storyDescription)}</div>` : ''}
+                </div>
+                <div class="puzzle-card-arrow">›</div>
+              </div>
+              <div class="puzzle-card-actions">
+                <button class="card-action-btn" onclick="editPuzzle(${idx})">✏️ Edit</button>
+                <button class="card-action-btn" onclick="exportPuzzle(${idx})">📤 Export</button>
+                <button class="card-action-btn card-delete-btn" id="del-btn-${idx}" onclick="confirmDelete(${idx}, this)">🗑 Delete</button>
+              </div>
+            </div>`;
+        }).join('');
+      }
+      showScreen('screen-puzzle-list');
+    }
+
+    // ============================================================
+    // SOLVE — GRID STATE
+    // ============================================================
+    function freshGrid() {
+      const m = () => Array.from({length:4}, () => Array(4).fill(0));
+      return { '0-1':m(), '0-2':m(), '0-3':m(), '1-2':m(), '1-3':m(), '2-3':m() };
+    }
+
+    function gridKey(puzzle) { return 'hurdles-grid-' + puzzle.id; }
+
+    function saveGrid() {
+      localStorage.setItem(gridKey(currentPuzzle), JSON.stringify(gridState));
+    }
+
+    // ============================================================
+    // SOLVE — OPEN / RENDER
+    // ============================================================
+    function openPuzzle(idx) {
+      const puzzles = loadPuzzles();
+      currentPuzzle    = puzzles[idx];
+      currentPuzzleIdx = idx;
+      gridState = JSON.parse(localStorage.getItem(gridKey(currentPuzzle)) || 'null') || freshGrid();
+
+      document.getElementById('solve-title').textContent = currentPuzzle.title || 'Untitled Mystery';
+      document.getElementById('solve-grid').innerHTML = buildGrid();
+      renderClues();
+      renderRef();
+      showScreen('screen-solve');
+    }
+
+    function exitSolve() {
+      closeClues();
+      closeRef();
+      showPuzzleList();
+    }
+
+    // ============================================================
+    // SOLVE — BUILD GRID HTML
+    // ============================================================
+    function symImg(catIdx, itemIdx, size) {
+      const syms = currentPuzzle.symbols;
+      if (!syms) return '';
+      const data = syms[CAT_KEYS[catIdx]] && syms[CAT_KEYS[catIdx]][itemIdx];
+      if (!data) return '';
+      return `<img src="${data}" width="${size}" height="${size}" style="display:block;margin:auto;border-radius:3px">`;
+    }
+
+    function buildGrid() {
+      const p = currentPuzzle;
+      const cats = [p.suspects, p.items, p.locations, p.motives];
+      let html = '';
+
+      /*
+        3 blocks:
+          Block 0: Suspects (rows) × Items / Locations / Motives (cols)
+          Block 1: Items    (rows) × Locations / Motives (cols)
+          Block 2: Locations(rows) × Motives (cols)
+      */
+      for (let rc = 0; rc < 3; rc++) {
+        const colCats = Array.from({length: 3 - rc}, (_, i) => rc + 1 + i);
+
+        html += `<div class="grid-block"><table class="logic-table"><thead>`;
+
+        // ---- Category header row ----
+        html += `<tr><th class="grid-corner" rowspan="2"></th>`;
+        colCats.forEach((cci, ci) => {
+          // last col of category gets a right-border separator (except final)
+          const endBorder = ci < colCats.length - 1 ? ' style="border-right:2px solid rgba(255,255,255,.18)"' : '';
+          html += `<th colspan="4" class="cat-header ${CAT_CLS[cci]}"${endBorder}>${CAT_NAMES[cci]}</th>`;
+        });
+        html += `</tr>`;
+
+        // ---- Item name header row ----
+        html += `<tr>`;
+        colCats.forEach((cci, ci) => {
+          cats[cci].forEach((item, j) => {
+            const isEnd = j === 3 && ci < colCats.length - 1;
+            html += `<th class="col-header${isEnd?' cat-end':''}">${symImg(cci, j, 28) || abbr(item.name, 5)}</th>`;
+          });
+        });
+        html += `</tr></thead><tbody>`;
+
+        // ---- Data rows ----
+        cats[rc].forEach((rowItem, ri) => {
+          html += `<tr><th class="row-header">${symImg(rc, ri, 34) || abbr(rowItem.name, 9)}</th>`;
+          colCats.forEach((cci, ci) => {
+            const pair = `${rc}-${cci}`;
+            cats[cci].forEach((_, colIdx) => {
+              const isEnd = colIdx === 3 && ci < colCats.length - 1;
+              const val = gridState[pair][ri][colIdx];
+              const cls = val === 1 ? 'cell-yes' : val === 2 ? 'cell-no' : '';
+              const sym = val === 1 ? '✅' : val === 2 ? '❌' : '';
+              html += `<td class="grid-cell ${cls}${isEnd?' cat-end':''}"
+                data-pair="${pair}" data-r="${ri}" data-c="${colIdx}"
+                onclick="cellTap('${pair}',${ri},${colIdx})">${sym}</td>`;
+            });
+          });
+          html += `</tr>`;
+        });
+
+        html += `</tbody></table></div>`;
+      }
+      return html;
+    }
+
+    // ============================================================
+    // SOLVE — CELL TAP
+    // ============================================================
+    // Cycle: 0=empty → 2=❌ → 1=✅ → 0=empty
+    const NEXT_VAL = [2, 0, 1];
+
+    function cellTap(pair, r, c) {
+      gridState[pair][r][c] = NEXT_VAL[gridState[pair][r][c]];
+      saveGrid();
+
+      const val = gridState[pair][r][c];
+      const cell = document.querySelector(
+        `[data-pair="${pair}"][data-r="${r}"][data-c="${c}"]`
+      );
+      if (!cell) return;
+
+      const wasEnd = cell.classList.contains('cat-end');
+      cell.className = `grid-cell ${val===1?'cell-yes':val===2?'cell-no':''}${wasEnd?' cat-end':''}`;
+      cell.textContent = val === 1 ? '✅' : val === 2 ? '❌' : '';
+    }
+
+    // ============================================================
+    // CLUE GENERATION
+    // ============================================================
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function shuffleArr(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Build a full bijection: every suspect gets exactly one item, location, and motive.
+    // The culprit's row is fixed by the solution; the other three rows are random.
+    // This is stored on the puzzle so Phase 6 can validate the complete grid.
+    function makeBijection(puzzle) {
+      const { solution } = puzzle;
+      const { suspectIndex: si, itemIndex: ii, locationIndex: li, motiveIndex: mi } = solution;
+
+      const remI = shuffleArr([0,1,2,3].filter(x => x !== ii));
+      const remL = shuffleArr([0,1,2,3].filter(x => x !== li));
+      const remM = shuffleArr([0,1,2,3].filter(x => x !== mi));
+      const remS = [0,1,2,3].filter(x => x !== si);
+
+      return [
+        { si, ii, li, mi },
+        { si: remS[0], ii: remI[0], li: remL[0], mi: remM[0] },
+        { si: remS[1], ii: remI[1], li: remL[1], mi: remM[1] },
+        { si: remS[2], ii: remI[2], li: remL[2], mi: remM[2] }
+      ];
+    }
+
+    function generateClues(puzzle) {
+      const { suspects, items, locations, motives, solution } = puzzle;
+
+      // Build and store full bijection (needed for Phase 6 validation too)
+      const bij = makeBijection(puzzle);
+      puzzle.bijection = bij;
+
+      // Helper: unpack one bijection row into named objects
+      function R(i) {
+        const row = bij[i];
+        const loc = locations[row.li];
+        const s   = suspects[row.si];
+        const it  = items[row.ii];
+        return {
+          s,
+          it,
+          l:     loc,
+          m:     motives[row.mi],
+          io:    loc.indoorOutdoor === 'indoor' ? 'indoors' : 'outdoors',
+          ioAdj: loc.indoorOutdoor === 'indoor' ? 'an indoor' : 'an outdoor',
+          hand:   (s.dominantHand || 'right') === 'left' ? 'left' : 'right',
+          eye:    (s.eyeColor   || '').toLowerCase(),
+          hair:   (s.hairColor  || '').toLowerCase(),
+          wt:     (it.weight    || '').toLowerCase(),
+          zodiac: (s.zodiacSign || ''),
+        };
+      }
+
+      // Randomise which bijection row feeds which clue type,
+      // so every saved puzzle feels different.
+      const ord = shuffleArr([0,1,2,3]);
+      const body = [];
+
+      // ── S × I  (size + material) ── 2 rows
+      // "The shortest suspect had a leather item."
+      [ord[0], ord[1]].forEach(i => {
+        const { s, it } = R(i);
+        body.push(pick([
+          `The ${s.size.toLowerCase()} suspect had a ${it.material.toLowerCase()} item.`,
+          `The ${it.material.toLowerCase()} item belonged to the ${s.size.toLowerCase()} suspect.`
+        ]));
+      });
+
+      // ── S × L  (name + indoors/outdoors) ── 2 rows
+      // "George was outdoors."
+      [ord[2], ord[3]].forEach(i => {
+        const { s, io, ioAdj } = R(i);
+        body.push(pick([
+          `${s.name} was ${io}.`,
+          `${s.name} was found at ${ioAdj} location.`
+        ]));
+      });
+
+      // ── S × L  (name + exact location name) ── 1 row  (pins one location precisely)
+      // "Alice was at the Library."
+      {
+        const { s, l } = R(ord[0]);
+        body.push(pick([
+          `${s.name} was at the ${l.name}.`,
+          `${s.name} could be found at the ${l.name}.`
+        ]));
+      }
+
+      // ── S × Mo  (name + motive) ── 2 rows
+      // "Bob's motive was jealousy."
+      [ord[1], ord[2]].forEach(i => {
+        const { s, m } = R(i);
+        body.push(pick([
+          `${s.name} was motivated by ${m.name.toLowerCase()}.`,
+          `${s.name}'s motive was ${m.name.toLowerCase()}.`
+        ]));
+      });
+
+      // ── S × I  (name + exact item name) ── 1 row
+      // "Carol had the Candlestick."
+      {
+        const { s, it } = R(ord[3]);
+        body.push(pick([
+          `${s.name} had the ${it.name}.`,
+          `The ${it.name} belonged to ${s.name}.`
+        ]));
+      }
+
+      // ── I × L  (item name + indoors/outdoors) ── 2 rows
+      // "The Rope was indoors."
+      [ord[2], ord[3]].forEach(i => {
+        const { it, io, ioAdj } = R(i);
+        body.push(pick([
+          `The ${it.name} was ${io}.`,
+          `The ${it.name} was at ${ioAdj} location.`
+        ]));
+      });
+
+      // ── L × Mo  (exact location name + motive) ── 1 row
+      // "The person at the Kitchen was motivated by greed."
+      {
+        const { l, m } = R(ord[3]);
+        body.push(`The person at the ${l.name} was motivated by ${m.name.toLowerCase()}.`);
+      }
+
+      // ── S × I  (eye color + material) ── uses ord[2], distinct from existing S×I rows (ord[0],ord[1],ord[3])
+      {
+        const { eye, it } = R(ord[2]);
+        if (eye && it.material) body.push(pick([
+          `The ${eye}-eyed suspect had a ${it.material.toLowerCase()} item.`,
+          `The ${it.material.toLowerCase()} item belonged to the ${eye}-eyed suspect.`
+        ]));
+      }
+
+      // ── S × L  (hair color + io) ── uses ord[1], distinct from existing S×L rows (ord[0],ord[2],ord[3])
+      {
+        const { hair, io } = R(ord[1]);
+        if (hair) body.push(pick([
+          `The suspect with ${hair} hair was ${io}.`,
+          `The ${hair}-haired suspect was found ${io}.`
+        ]));
+      }
+
+      // ── S × Mo  (dominant hand + motive) ── uses ord[3], distinct from existing S×Mo rows (ord[1],ord[2])
+      {
+        const { hand, m } = R(ord[3]);
+        body.push(pick([
+          `The ${hand}-handed suspect's motive was ${m.name.toLowerCase()}.`,
+          `The ${hand}-handed suspect was motivated by ${m.name.toLowerCase()}.`
+        ]));
+      }
+
+      // ── I × L  (weight + io) ── uses ord[0], distinct from existing I×L rows (ord[2],ord[3])
+      {
+        const { wt, io } = R(ord[0]);
+        if (wt) body.push(`A ${wt}-weight item was ${io}.`);
+      }
+
+      // ── S × Mo  (zodiac + motive) ── uses ord[0], distinct from existing S×Mo rows (ord[1],ord[2],ord[3])
+      {
+        const { zodiac, m } = R(ord[0]);
+        if (zodiac) body.push(pick([
+          `The ${zodiac} suspect's motive was ${m.name.toLowerCase()}.`,
+          `The ${zodiac} suspect was motivated by ${m.name.toLowerCase()}.`
+        ]));
+      }
+
+      // Shuffle so the order of clues doesn't reveal anything
+      shuffleArr(body);
+
+      // ── Final reveal — always last ──
+      // "A Candlestick was used to commit the crime."
+      body.push(`A ${items[solution.itemIndex].name} was used to commit the crime.`);
+
+      return body;
+    }
+
+    // ============================================================
+    // CLUE RENDERING
+    // ============================================================
+    function renderClues() {
+      const el = document.getElementById('clues-body');
+      const clues = currentPuzzle.clues;
+
+      if (!clues || clues.length === 0) {
+        el.innerHTML = `<div class="clue-placeholder">No clues found for this puzzle.<br>Try re-creating it.</div>`;
+        return;
+      }
+
+      el.innerHTML = clues.map((c, i) => {
+        const isLast = i === clues.length - 1;
+        return `<div class="clue-item${isLast ? ' clue-final' : ''}">
+          <span class="clue-num">${isLast ? '🔍' : i + 1}</span>
+          <span>${esc(c)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ============================================================
+    // SOLVE — CLUES PANEL
+    // ============================================================
+    function openClues() {
+      closeRef();
+      document.getElementById('clues-overlay').classList.add('open');
+      document.getElementById('clues-panel').classList.add('open');
+    }
+    function closeClues() {
+      document.getElementById('clues-overlay').classList.remove('open');
+      document.getElementById('clues-panel').classList.remove('open');
+    }
+
+    // ============================================================
+    // SOLVE — REFERENCE PANEL
+    // ============================================================
+    function renderRef() {
+      const p = currentPuzzle;
+      const syms = p.symbols || {};
+      const cats = [
+        { key: 'suspects',  label: '🕵️ Suspects', color: '#c084fc', items: p.suspects.map(s => ({ name: s.name, attr: [s.size, s.zodiacSign, s.eyeColor ? s.eyeColor+' eyes' : '', s.hairColor ? s.hairColor+' hair' : '', s.dominantHand ? s.dominantHand+'-handed' : ''].filter(Boolean).join(' · ') })) },
+        { key: 'items',     label: '🔪 Items',     color: '#f87171', items: p.items.map(it => ({ name: it.name, attr: [it.material, it.weight].filter(Boolean).join(' · ') })) },
+        { key: 'locations', label: '🗺️ Locations', color: '#4ade80', items: p.locations.map(loc => ({ name: loc.name, attr: loc.indoorOutdoor === 'indoor' ? 'Indoors' : 'Outdoors' })) },
+        { key: 'motives',   label: '💭 Motives',   color: '#60a5fa', items: p.motives.map(m => ({ name: m.name, attr: '' })) },
+      ];
+      const storyHtml = p.storyDescription ? `
+        <div style="margin-bottom:18px;padding:12px 14px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);border-radius:10px;">
+          <div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(168,85,247,.8);margin-bottom:6px">📖 Story</div>
+          <div style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.5">${esc(p.storyDescription)}</div>
+        </div>` : '';
+      document.getElementById('ref-body').innerHTML = storyHtml + cats.map(cat => {
+        const symArr = syms[cat.key] || [];
+        return `
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:${cat.color};margin-bottom:8px">${cat.label}</div>
+            ${cat.items.map((it, i) => {
+              const symData = symArr[i];
+              const icon = symData
+                ? `<img src="${symData}" width="36" height="36" style="border-radius:6px;flex-shrink:0">`
+                : `<div style="width:36px;height:36px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);flex-shrink:0"></div>`;
+              return `
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;">
+                  ${icon}
+                  <span style="flex:1;color:rgba(255,255,255,.85);font-size:14px;font-weight:600">${esc(it.name)}</span>
+                  ${it.attr ? `<span style="color:rgba(255,255,255,.4);font-size:13px;flex-shrink:0">${esc(it.attr)}</span>` : ''}
+                </div>`;
+            }).join('')}
+          </div>`;
+      }).join('');
+    }
+
+    function openRef() {
+      closeClues();
+      document.getElementById('ref-overlay').classList.add('open');
+      document.getElementById('ref-panel').classList.add('open');
+    }
+    function closeRef() {
+      document.getElementById('ref-overlay').classList.remove('open');
+      document.getElementById('ref-panel').classList.remove('open');
+    }
+
+    // ============================================================
+    // SOLVE — RESET GRID
+    // ============================================================
+    function resetGrid() {
+      if (!resetPending) {
+        resetPending = true;
+        showToast('Tap Reset again to clear all cells');
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => { resetPending = false; }, 3000);
+        return;
+      }
+      clearTimeout(resetTimer);
+      resetPending = false;
+      gridState = freshGrid();
+      saveGrid();
+      document.getElementById('solve-grid').innerHTML = buildGrid();
+      showToast('Grid cleared!');
+    }
+
+    // ============================================================
+    // PUZZLE EDIT / DELETE
+    // ============================================================
+    function editPuzzle(idx) {
+      const puzzles = loadPuzzles();
+      const p = puzzles[idx];
+      if (!p) return;
+      creatorData = JSON.parse(JSON.stringify(p)); // deep clone
+      creatorStep = 0;
+      editingPuzzleIdx = idx;
+      renderCreatorStep();
+      showScreen('screen-creator');
+    }
+
+    function confirmDelete(idx, btn) {
+      if (deleteConfirmIdx === idx) {
+        // Second tap — actually delete
+        clearTimeout(deleteConfirmTimer);
+        deleteConfirmIdx = -1;
+        const puzzles = loadPuzzles();
+        const p = puzzles[idx];
+        if (p) localStorage.removeItem('hurdles-grid-' + p.id);
+        puzzles.splice(idx, 1);
+        storePuzzles(puzzles);
+        showPuzzleList();
+        showToast('🗑 Puzzle deleted');
+      } else {
+        // First tap — ask for confirmation
+        // Reset any previous pending button
+        if (deleteConfirmIdx >= 0) {
+          const prev = document.getElementById('del-btn-' + deleteConfirmIdx);
+          if (prev) { prev.textContent = '🗑 Delete'; prev.classList.remove('confirm'); }
+        }
+        clearTimeout(deleteConfirmTimer);
+        deleteConfirmIdx = idx;
+        btn.textContent = 'Sure?';
+        btn.classList.add('confirm');
+        deleteConfirmTimer = setTimeout(() => {
+          btn.textContent = '🗑 Delete';
+          btn.classList.remove('confirm');
+          deleteConfirmIdx = -1;
+        }, 3000);
+      }
+    }
+
+    // ============================================================
+    // SOLVE — VALIDATION
+    // ============================================================
+
+    // Build the expected correct grid from the stored bijection.
+    // Every cell that is ✅ in the correct grid corresponds to a real
+    // suspect→item / suspect→location / etc. pairing; all others are ❌.
+    function buildCorrectGrid(puzzle) {
+      const correct = {};
+      PAIRS.forEach(p => {
+        correct[p] = Array.from({length:4}, () => Array(4).fill(2)); // default ❌
+      });
+      puzzle.bijection.forEach(({ si, ii, li, mi }) => {
+        correct['0-1'][si][ii] = 1;
+        correct['0-2'][si][li] = 1;
+        correct['0-3'][si][mi] = 1;
+        correct['1-2'][ii][li] = 1;
+        correct['1-3'][ii][mi] = 1;
+        correct['2-3'][li][mi] = 1;
+      });
+      return correct;
+    }
+
+    function checkAnswers() {
+      if (!currentPuzzle.bijection) {
+        showToast('⚠️ Recreate this puzzle to enable checking.');
+        return;
+      }
+
+      const correct = buildCorrectGrid(currentPuzzle);
+      const wrong = [];
+      let empty = 0;
+
+      PAIRS.forEach(pair => {
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            const v = gridState[pair][r][c];
+            if (v === 0) {
+              empty++;
+            } else if (v !== correct[pair][r][c]) {
+              wrong.push({ pair, r, c });
+            }
+          }
+        }
+      });
+
+      if (empty > 0) {
+        showToast(`Fill in ${empty} more cell${empty !== 1 ? 's' : ''} first!`);
+        return;
+      }
+
+      if (wrong.length === 0) {
+        showWinScreen();
+        return;
+      }
+
+      // Mark wrong cells — they clear automatically the next time the player taps them
+      wrong.forEach(({ pair, r, c }) => {
+        const cell = document.querySelector(
+          `[data-pair="${pair}"][data-r="${r}"][data-c="${c}"]`
+        );
+        if (cell) cell.classList.add('cell-wrong');
+      });
+      showToast(`❌ ${wrong.length} cell${wrong.length !== 1 ? 's are' : ' is'} wrong — keep going!`);
+    }
+
+    // ============================================================
+    // WIN SCREEN
+    // ============================================================
+    function showWinScreen() {
+      const p  = currentPuzzle;
+      const sol = p.solution;
+      const culprit = p.suspects[sol.suspectIndex];
+      const item    = p.items[sol.itemIndex];
+      const loc     = p.locations[sol.locationIndex];
+      const motive  = p.motives[sol.motiveIndex];
+
+      document.getElementById('win-tagline').textContent =
+        `You cracked "${p.title || 'Untitled Mystery'}"!`;
+
+      document.getElementById('win-crime').innerHTML = `
+        <div class="crime-card-title">The Crime</div>
+        <div class="crime-line">
+          <strong>${esc(culprit.name)}</strong> committed the crime at the
+          <strong>${esc(loc.name)}</strong> using <strong>a ${esc(item.name)}</strong>,
+          motivated by <strong>${esc(motive.name.toLowerCase())}</strong>.
+        </div>`;
+
+      // Full bijection table — culprit row first
+      const rows = [...p.bijection].sort((a, b) =>
+        a.si === sol.suspectIndex ? -1 : b.si === sol.suspectIndex ? 1 : 0
+      );
+      document.getElementById('win-bij-table').innerHTML = `
+        <thead><tr>
+          <th>Suspect</th><th>Item</th><th>Location</th><th>Motive</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(row => `
+            <tr class="${row.si === sol.suspectIndex ? 'bij-culprit' : ''}">
+              <td>${esc(p.suspects[row.si].name)}</td>
+              <td>${esc(p.items[row.ii].name)}</td>
+              <td>${esc(p.locations[row.li].name)}</td>
+              <td>${esc(p.motives[row.mi].name)}</td>
+            </tr>`).join('')}
+        </tbody>`;
+
+      closeClues();
+      showScreen('screen-win');
+    }
+
+    function exitToList() { showPuzzleList(); }
+
+    // ============================================================
+    // EXPORT / IMPORT
+    // ============================================================
+    async function exportPuzzle(idx) {
+      const puzzles = loadPuzzles();
+      const p = puzzles[idx];
+      if (!p) return;
+      const json = JSON.stringify(p, null, 2);
+      const filename = (p.title || 'puzzle').replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').toLowerCase() + '.json';
+      const blob = new Blob([json], { type: 'application/json' });
+      const file = new File([blob], filename, { type: 'application/json' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: p.title || 'Hurdles Puzzle' });
+        } catch (e) {
+          if (e.name !== 'AbortError') showError('Could not share puzzle');
+        }
+      } else {
+        // Fallback: trigger browser download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    }
+
+    function importPuzzle() {
+      document.getElementById('import-input').click();
+    }
+
+    function handleImport(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const p = JSON.parse(e.target.result);
+          if (!p || !Array.isArray(p.suspects) || !Array.isArray(p.items) ||
+              !Array.isArray(p.locations) || !Array.isArray(p.motives) || !p.solution) {
+            showError('Not a valid Hurdles puzzle file'); return;
+          }
+          // Fresh ID so it never collides with an existing puzzle
+          p.id = Date.now().toString();
+          p.importedAt = new Date().toISOString();
+          const puzzles = loadPuzzles();
+          puzzles.push(p);
+          storePuzzles(puzzles);
+          showPuzzleList();
+          showToast('📥 "' + (p.title || 'Puzzle') + '" imported!');
+        } catch {
+          showError('Could not read that file');
+        }
+        input.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+    updatePuzzleCount();
+  </script>
+</body>
+</html>
