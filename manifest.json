@@ -1,0 +1,29 @@
+{
+  "name": "HCJ Arcade",
+  "short_name": "HCJ Arcade",
+  "description": "Henry's game collection",
+  "start_url": "/arcade/",
+  "display": "standalone",
+  "background_color": "#1a1035",
+  "theme_color": "#2d1b69",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

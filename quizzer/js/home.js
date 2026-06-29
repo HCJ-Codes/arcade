@@ -87,15 +87,6 @@ export function renderHome(el, navigate) {
           </button>
         </div>
 
-        ${cats.length === 0 ? `
-          <div class="mt-7 p-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 text-center">
-            <p class="text-cyan-300 text-sm leading-relaxed">
-              👋 Welcome to QuizQuiz! Start by tapping <strong>Categories</strong> to create
-              your first category, then build a quiz.
-            </p>
-          </div>
-        ` : ''}
-
         <p class="text-center text-slate-700 text-xs mt-8">
           Tip: tap the ↓ button to back up your quizzes to a file!
         </p>
