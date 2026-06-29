@@ -2,7 +2,7 @@
   "name": "Henry's Hurdles",
   "short_name": "Hurdles",
   "description": "A deduction grid mystery puzzle game",
-  "start_url": "/",
+  "start_url": "/hurdles/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a1035",

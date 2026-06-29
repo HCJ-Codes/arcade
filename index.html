@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#2d1b69" />
+  <title>HCJ Arcade</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html { background: #1a1035; height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: radial-gradient(ellipse at top, #2d1b69 0%, #1a1035 60%, #0d0820 100%);
+      min-height: 100dvh; color: #fff;
+      user-select: none; touch-action: manipulation;
+      display: flex; align-items: center; justify-content: center;
+      padding: max(env(safe-area-inset-top), 40px) 24px max(env(safe-area-inset-bottom), 40px);
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 40% 10%, rgba(255,255,255,.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 25%, rgba(255,255,255,.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 75%, rgba(255,255,255,.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 85%, rgba(255,255,255,.4) 0%, transparent 100%),
+        radial-gradient(2px 2px at 50% 30%, rgba(255,255,180,.7) 0%, transparent 100%),
+        radial-gradient(2px 2px at 20% 55%, rgba(255,255,180,.5) 0%, transparent 100%),
+        radial-gradient(2px 2px at 75% 50%, rgba(255,255,180,.6) 0%, transparent 100%);
+    }
+
+    .inner {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px; width: 100%; max-width: 420px;
+    }
+
+    .arcade-icon { font-size: 72px; filter: drop-shadow(0 0 20px rgba(180,140,255,.6)); margin-bottom: 4px; }
+
+    h1 {
+      font-size: clamp(32px, 8vw, 48px); font-weight: 900;
+      letter-spacing: -1px; text-align: center; line-height: 1.1;
+      background: linear-gradient(135deg, #c084fc 0%, #e879f9 40%, #f0abfc 70%, #fde68a 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; filter: drop-shadow(0 0 20px rgba(192,132,252,.4));
+    }
+    .tagline {
+      font-size: 15px; color: rgba(255,255,255,.55);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;
+    }
+
+    .game-card {
+      width: 100%; display: flex; align-items: center; gap: 18px;
+      background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 20px; padding: 18px 20px;
+      text-decoration: none; color: #fff;
+      transition: background .15s, border-color .15s, transform .12s;
+    }
+    .game-card:active { background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.4); transform: scale(.98); }
+
+    .game-icon {
+      width: 64px; height: 64px; border-radius: 14px; flex-shrink: 0;
+      object-fit: contain;
+    }
+    .game-icon-emoji {
+      width: 64px; height: 64px; border-radius: 14px; flex-shrink: 0;
+      background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px;
+    }
+    .game-info { flex: 1; }
+    .game-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .game-desc  { font-size: 13px; color: rgba(255,255,255,.5); line-height: 1.4; }
+    .game-arrow { font-size: 22px; opacity: .4; flex-shrink: 0; }
+
+    .divider { width: 100%; height: 1px; background: rgba(255,255,255,.08); margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="inner">
+    <div class="arcade-icon">🕹️</div>
+    <h1>HCJ Arcade</h1>
+    <p class="tagline">Henry's Games</p>
+
+    <a class="game-card" href="hurdles/">
+      <img class="game-icon" src="hurdles/icon-192.png" alt="Hurdles icon" />
+      <div class="game-info">
+        <div class="game-title">Henry's Hurdles</div>
+        <div class="game-desc">Deduction grid mystery puzzles — find the culprit!</div>
+      </div>
+      <div class="game-arrow">›</div>
+    </a>
+
+    <a class="game-card" href="quizzer/">
+      <img class="game-icon" src="quizzer/icon.svg" alt="QuizQuiz icon" />
+      <div class="game-info">
+        <div class="game-title">QuizQuiz</div>
+        <div class="game-desc">Create and play fun trivia quizzes</div>
+      </div>
+      <div class="game-arrow">›</div>
+    </a>
+
+    <a class="game-card" href="cipher-lab/">
+      <div class="game-icon-emoji">🔐</div>
+      <div class="game-info">
+        <div class="game-title">Cipher Lab</div>
+        <div class="game-desc">Crack codes and uncover secret messages</div>
+      </div>
+      <div class="game-arrow">›</div>
+    </a>
+  </div>
+</body>
+</html>

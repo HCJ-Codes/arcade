@@ -1,8 +1,8 @@
 const CACHE_NAME = 'hurdles-v14';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  '/hurdles/',
+  '/hurdles/index.html',
+  '/hurdles/manifest.json'
 ];
 
 self.addEventListener('install', e => {

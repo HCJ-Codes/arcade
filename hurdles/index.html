@@ -1725,7 +1725,7 @@
     // INIT
     // ============================================================
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.register('/hurdles/sw.js', { scope: '/hurdles/' });
     }
     updatePuzzleCount();
   </script>
