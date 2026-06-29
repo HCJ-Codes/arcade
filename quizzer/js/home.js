@@ -9,8 +9,13 @@ export function renderHome(el, navigate) {
     el.innerHTML = `
       <div class="max-w-lg mx-auto px-4 pb-10">
 
+        <!-- Arcade link -->
+        <div class="pt-6 pb-1">
+          <a href="/arcade/" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.45);font-size:13px;font-weight:600;text-decoration:none;">🕹️ HCJ Arcade</a>
+        </div>
+
         <!-- Header -->
-        <div class="flex items-center justify-between pt-10 pb-6">
+        <div class="flex items-center justify-between pt-6 pb-6">
           <div>
             <h1 class="text-5xl font-extrabold gradient-text tracking-tight">QuizQuiz</h1>
             <p class="text-slate-400 text-sm mt-1.5">
