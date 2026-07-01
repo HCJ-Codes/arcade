@@ -1681,14 +1681,17 @@
       const blob = new Blob([json], { type: 'application/json' });
       const file = new File([blob], filename, { type: 'application/json' });
 
+      let shared = false;
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: p.title || 'Hurdles Puzzle' });
+          shared = true;
         } catch (e) {
-          if (e.name !== 'AbortError') showError('Could not share puzzle');
+          if (e.name === 'AbortError') return; // user cancelled — do nothing
+          // Share failed (e.g. desktop browser) — fall through to download
         }
-      } else {
-        // Fallback: trigger browser download
+      }
+      if (!shared) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = filename;
