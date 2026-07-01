@@ -1327,13 +1327,15 @@
       });
 
       // ── S × I  (name + exact item name) ── 1 row
-      // "Carol had the Candlestick."
+      // "Carol had the Candlestick." — skipped if that item is the crime item
       {
-        const { s, it } = R(ord[3]);
-        body.push(pick([
-          `${s.name} had the ${it.name}.`,
-          `The ${it.name} belonged to ${s.name}.`
-        ]));
+        if (bij[ord[3]].ii !== solution.itemIndex) {
+          const { s, it } = R(ord[3]);
+          body.push(pick([
+            `${s.name} had the ${it.name}.`,
+            `The ${it.name} belonged to ${s.name}.`
+          ]));
+        }
       }
 
       // ── I × L  (item name + indoors/outdoors) ── 2 rows
@@ -1395,9 +1397,10 @@
         ]));
       }
 
-      // ── S × I  (name + exact item) ── 2 more rows, any suspects — no crime reference
-      // Combined with the ord[3] clue above, gives 3 randomised suspect→item facts
+      // ── S × I  (name + exact item) ── 2 more rows, any suspects
+      // Skipped when the row's item is the crime item — that's reserved for the final clue
       [ord[0], ord[2]].forEach(i => {
+        if (bij[i].ii === solution.itemIndex) return;
         const { s, it } = R(i);
         body.push(pick([
           `${s.name} had the ${it.name}.`,
@@ -1407,6 +1410,9 @@
 
       // Shuffle so the order of clues doesn't reveal anything
       shuffleArr(body);
+
+      // ── Final clue — always last, always highlighted ──
+      body.push(`The ${items[solution.itemIndex].name} was used to commit the crime.`);
 
       return body;
     }

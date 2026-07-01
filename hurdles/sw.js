@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hurdles-v16';
+const CACHE_NAME = 'hurdles-v17';
 const ASSETS = [
   '/hurdles/',
   '/hurdles/index.html',
