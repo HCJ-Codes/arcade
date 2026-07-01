@@ -1286,13 +1286,29 @@
       const ord = shuffleArr([0,1,2,3]);
       const body = [];
 
+      // Uniqueness helper: true only if val appears exactly once across all entries
+      function oneOf(arr, val) { return val && arr.filter(v => v === val).length === 1; }
+
+      // Pre-compute attribute lists so we can check uniqueness per attribute
+      const sizeArr   = suspects.map(s => (s.size        || '').toLowerCase());
+      const eyeArr    = suspects.map(s => (s.eyeColor    || '').toLowerCase());
+      const hairArr   = suspects.map(s => (s.hairColor   || '').toLowerCase());
+      const handArr   = suspects.map(s => (s.dominantHand || 'right').toLowerCase());
+      const zodiacArr = suspects.map(s => (s.zodiacSign  || '').toLowerCase());
+      const matArr    = items.map(it => (it.material || '').toLowerCase());
+      const wtArr     = items.map(it => (it.weight   || '').toLowerCase());
+
       // ── S × I  (size + material) ── 2 rows
       // "The shortest suspect had a leather item."
+      // Only valid when the suspect's size uniquely identifies them.
       [ord[0], ord[1]].forEach(i => {
         const { s, it } = R(i);
+        const sz  = s.size.toLowerCase();
+        const mat = (it.material || '').toLowerCase();
+        if (!sz || !mat || !oneOf(sizeArr, sz)) return;
         body.push(pick([
-          `The ${s.size.toLowerCase()} suspect had a ${it.material.toLowerCase()} item.`,
-          `The ${it.material.toLowerCase()} item belonged to the ${s.size.toLowerCase()} suspect.`
+          `The ${sz} suspect had a ${mat} item.`,
+          `The ${mat} item belonged to the ${sz} suspect.`
         ]));
       });
 
@@ -1355,43 +1371,49 @@
         body.push(`The person at the ${l.name} was motivated by ${m.name.toLowerCase()}.`);
       }
 
-      // ── S × I  (eye color + material) ── uses ord[2], distinct from existing S×I rows (ord[0],ord[1],ord[3])
+      // ── S × I  (eye color + material) ── uses ord[2]
+      // Only valid when eye color uniquely identifies this suspect.
       {
         const { eye, it } = R(ord[2]);
-        if (eye && it.material) body.push(pick([
-          `The ${eye}-eyed suspect had a ${it.material.toLowerCase()} item.`,
-          `The ${it.material.toLowerCase()} item belonged to the ${eye}-eyed suspect.`
+        const mat = (it.material || '').toLowerCase();
+        if (eye && mat && oneOf(eyeArr, eye)) body.push(pick([
+          `The ${eye}-eyed suspect had a ${mat} item.`,
+          `The ${mat} item belonged to the ${eye}-eyed suspect.`
         ]));
       }
 
-      // ── S × L  (hair color + io) ── uses ord[1], distinct from existing S×L rows (ord[0],ord[2],ord[3])
+      // ── S × L  (hair color + io) ── uses ord[1]
+      // Only valid when hair color uniquely identifies this suspect.
       {
         const { hair, io } = R(ord[1]);
-        if (hair) body.push(pick([
+        if (hair && oneOf(hairArr, hair)) body.push(pick([
           `The suspect with ${hair} hair was ${io}.`,
           `The ${hair}-haired suspect was found ${io}.`
         ]));
       }
 
-      // ── S × Mo  (dominant hand + motive) ── uses ord[3], distinct from existing S×Mo rows (ord[1],ord[2])
+      // ── S × Mo  (dominant hand + motive) ── uses ord[3]
+      // Only valid when this hand is unique among suspects (skips when everyone is right-handed).
       {
         const { hand, m } = R(ord[3]);
-        body.push(pick([
+        if (oneOf(handArr, hand)) body.push(pick([
           `The ${hand}-handed suspect's motive was ${m.name.toLowerCase()}.`,
           `The ${hand}-handed suspect was motivated by ${m.name.toLowerCase()}.`
         ]));
       }
 
-      // ── I × L  (weight + io) ── uses ord[0], distinct from existing I×L rows (ord[2],ord[3])
+      // ── I × L  (weight + io) ── uses ord[0]
+      // Only valid when this weight class is unique among items (guaranteed duplicate with 3 options, 4 items).
       {
         const { wt, io } = R(ord[0]);
-        if (wt) body.push(`A ${wt}-weight item was ${io}.`);
+        if (wt && oneOf(wtArr, wt)) body.push(`A ${wt}-weight item was ${io}.`);
       }
 
-      // ── S × Mo  (zodiac + motive) ── uses ord[0], distinct from existing S×Mo rows (ord[1],ord[2],ord[3])
+      // ── S × Mo  (zodiac + motive) ── uses ord[0]
+      // Only valid when zodiac sign uniquely identifies this suspect.
       {
         const { zodiac, m } = R(ord[0]);
-        if (zodiac) body.push(pick([
+        if (zodiac && oneOf(zodiacArr, zodiac.toLowerCase())) body.push(pick([
           `The ${zodiac} suspect's motive was ${m.name.toLowerCase()}.`,
           `The ${zodiac} suspect was motivated by ${m.name.toLowerCase()}.`
         ]));
