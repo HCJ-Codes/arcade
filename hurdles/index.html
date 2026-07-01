@@ -1115,6 +1115,10 @@
       currentPuzzleIdx = idx;
       gridState = JSON.parse(localStorage.getItem(gridKey(currentPuzzle)) || 'null') || freshGrid();
 
+      // Always regenerate clues at play time so fixes apply to existing puzzles
+      // and attribute uniqueness is re-evaluated against the current puzzle data.
+      currentPuzzle.clues = generateClues(currentPuzzle);
+
       document.getElementById('solve-title').textContent = currentPuzzle.title || 'Untitled Mystery';
       document.getElementById('solve-grid').innerHTML = buildGrid();
       renderClues();
@@ -1256,181 +1260,119 @@
     function generateClues(puzzle) {
       const { suspects, items, locations, motives, solution } = puzzle;
 
-      // Build and store full bijection (needed for Phase 6 validation too)
-      const bij = makeBijection(puzzle);
-      puzzle.bijection = bij;
+      // Reuse stored bijection so the answer key stays consistent across replays.
+      // Create one if missing (e.g. very old puzzle format).
+      if (!puzzle.bijection) puzzle.bijection = makeBijection(puzzle);
+      const bij = puzzle.bijection;
 
-      // Helper: unpack one bijection row into named objects
-      function R(i) {
-        const row = bij[i];
-        const loc = locations[row.li];
-        const s   = suspects[row.si];
-        const it  = items[row.ii];
-        return {
-          s,
-          it,
-          l:     loc,
-          m:     motives[row.mi],
-          io:    loc.indoorOutdoor === 'indoor' ? 'indoors' : 'outdoors',
-          ioAdj: loc.indoorOutdoor === 'indoor' ? 'an indoor' : 'an outdoor',
-          hand:   (s.dominantHand || 'right') === 'left' ? 'left' : 'right',
-          eye:    (s.eyeColor   || '').toLowerCase(),
-          hair:   (s.hairColor  || '').toLowerCase(),
-          wt:     (it.weight    || '').toLowerCase(),
-          zodiac: (s.zodiacSign || ''),
-        };
-      }
-
-      // Randomise which bijection row feeds which clue type,
-      // so every saved puzzle feels different.
-      const ord = shuffleArr([0,1,2,3]);
-      const body = [];
-
-      // Uniqueness helper: true only if val appears exactly once across all entries
+      // ── Uniqueness helpers ──
+      // A clue using an attribute (e.g. "blonde hair") is only valid when that
+      // value belongs to exactly one entity, otherwise it's ambiguous.
       function oneOf(arr, val) { return val && arr.filter(v => v === val).length === 1; }
 
-      // Pre-compute attribute lists so we can check uniqueness per attribute
       const sizeArr   = suspects.map(s => (s.size        || '').toLowerCase());
       const eyeArr    = suspects.map(s => (s.eyeColor    || '').toLowerCase());
       const hairArr   = suspects.map(s => (s.hairColor   || '').toLowerCase());
       const handArr   = suspects.map(s => (s.dominantHand || 'right').toLowerCase());
       const zodiacArr = suspects.map(s => (s.zodiacSign  || '').toLowerCase());
-      const matArr    = items.map(it => (it.material || '').toLowerCase());
-      const wtArr     = items.map(it => (it.weight   || '').toLowerCase());
+      const wtArr     = items.map(it => (it.weight || '').toLowerCase());
 
-      // ── S × I  (size + material) ── 2 rows
-      // "The shortest suspect had a leather item."
-      // Only valid when the suspect's size uniquely identifies them.
-      [ord[0], ord[1]].forEach(i => {
-        const { s, it } = R(i);
-        const sz  = s.size.toLowerCase();
-        const mat = (it.material || '').toLowerCase();
-        if (!sz || !mat || !oneOf(sizeArr, sz)) return;
-        body.push(pick([
-          `The ${sz} suspect had a ${mat} item.`,
-          `The ${mat} item belonged to the ${sz} suspect.`
-        ]));
-      });
+      // ── Build a candidate pool for each category pair ──
+      // Each entry: { row: bijection row index, text: clue string }
+      // By tracking the row, we can ensure clues about different rows (diverse info).
+      const pools = { SL: [], SM: [], SI: [], IL: [], LM: [] };
 
-      // ── S × L  (name + indoors/outdoors) ── 2 rows
-      // "George was outdoors."
-      [ord[2], ord[3]].forEach(i => {
-        const { s, io, ioAdj } = R(i);
-        body.push(pick([
-          `${s.name} was ${io}.`,
-          `${s.name} was found at ${ioAdj} location.`
-        ]));
-      });
+      bij.forEach((row, ri) => {
+        const s  = suspects[row.si];
+        const it = items[row.ii];
+        const l  = locations[row.li];
+        const m  = motives[row.mi];
+        const io    = l.indoorOutdoor === 'indoor' ? 'indoors' : 'outdoors';
+        const ioAdj = l.indoorOutdoor === 'indoor' ? 'an indoor' : 'an outdoor';
+        const sz     = (s.size        || '').toLowerCase();
+        const eye    = (s.eyeColor    || '').toLowerCase();
+        const hair   = (s.hairColor   || '').toLowerCase();
+        const hand   = (s.dominantHand || 'right').toLowerCase();
+        const zodiac = (s.zodiacSign  || '').toLowerCase();
+        const mat    = (it.material   || '').toLowerCase();
+        const wt     = (it.weight     || '').toLowerCase();
+        const mn     = m.name.toLowerCase();
 
-      // ── S × L  (name + exact location name) ── 1 row  (pins one location precisely)
-      // "Alice was at the Library."
-      {
-        const { s, l } = R(ord[0]);
-        body.push(pick([
-          `${s.name} was at the ${l.name}.`,
-          `${s.name} could be found at the ${l.name}.`
-        ]));
-      }
+        // S×L — exact location (always valid: names are unique)
+        pools.SL.push({ row: ri, text: pick([`${s.name} was at the ${l.name}.`, `${s.name} could be found at the ${l.name}.`]) });
+        // S×L — indoor/outdoor (always valid)
+        pools.SL.push({ row: ri, text: pick([`${s.name} was ${io}.`, `${s.name} was found at ${ioAdj} location.`]) });
+        // S×L — hair attribute (only if unique)
+        if (hair && oneOf(hairArr, hair))
+          pools.SL.push({ row: ri, text: pick([`The suspect with ${hair} hair was ${io}.`, `The ${hair}-haired suspect was found ${io}.`]) });
 
-      // ── S × Mo  (name + motive) ── 2 rows
-      // "Bob's motive was jealousy."
-      [ord[1], ord[2]].forEach(i => {
-        const { s, m } = R(i);
-        body.push(pick([
-          `${s.name} was motivated by ${m.name.toLowerCase()}.`,
-          `${s.name}'s motive was ${m.name.toLowerCase()}.`
-        ]));
-      });
+        // S×Mo — name (always valid)
+        pools.SM.push({ row: ri, text: pick([`${s.name} was motivated by ${mn}.`, `${s.name}'s motive was ${mn}.`]) });
+        // S×Mo — dominant hand (only if unique — left-handers only)
+        if (oneOf(handArr, hand))
+          pools.SM.push({ row: ri, text: pick([`The ${hand}-handed suspect's motive was ${mn}.`, `The ${hand}-handed suspect was motivated by ${mn}.`]) });
+        // S×Mo — zodiac (only if unique)
+        if (zodiac && oneOf(zodiacArr, zodiac))
+          pools.SM.push({ row: ri, text: pick([`The ${zodiac} suspect's motive was ${mn}.`, `The ${zodiac} suspect was motivated by ${mn}.`]) });
 
-      // ── S × I  (name + exact item name) ── 1 row
-      // "Carol had the Candlestick." — skipped if that item is the crime item
-      {
-        if (bij[ord[3]].ii !== solution.itemIndex) {
-          const { s, it } = R(ord[3]);
-          body.push(pick([
-            `${s.name} had the ${it.name}.`,
-            `The ${it.name} belonged to ${s.name}.`
-          ]));
+        // S×I — skip if this bijection row carries the crime item
+        if (row.ii !== solution.itemIndex) {
+          // name (always valid)
+          pools.SI.push({ row: ri, text: pick([`${s.name} had the ${it.name}.`, `The ${it.name} belonged to ${s.name}.`]) });
+          // size + material (only if suspect's size is unique)
+          if (sz && mat && oneOf(sizeArr, sz))
+            pools.SI.push({ row: ri, text: pick([`The ${sz} suspect had a ${mat} item.`, `The ${mat} item belonged to the ${sz} suspect.`]) });
+          // eye + material (only if eye color is unique)
+          if (eye && mat && oneOf(eyeArr, eye))
+            pools.SI.push({ row: ri, text: pick([`The ${eye}-eyed suspect had a ${mat} item.`, `The ${mat} item belonged to the ${eye}-eyed suspect.`]) });
         }
-      }
 
-      // ── I × L  (item name + indoors/outdoors) ── 2 rows
-      // "The Rope was indoors."
-      [ord[2], ord[3]].forEach(i => {
-        const { it, io, ioAdj } = R(i);
-        body.push(pick([
-          `The ${it.name} was ${io}.`,
-          `The ${it.name} was at ${ioAdj} location.`
-        ]));
+        // I×L — item name (always valid)
+        pools.IL.push({ row: ri, text: pick([`The ${it.name} was ${io}.`, `The ${it.name} was at ${ioAdj} location.`]) });
+        // I×L — weight (only if unique among all items)
+        if (wt && oneOf(wtArr, wt))
+          pools.IL.push({ row: ri, text: `A ${wt}-weight item was ${io}.` });
+
+        // L×Mo — exact location + motive (always valid)
+        pools.LM.push({ row: ri, text: `The person at the ${l.name} was motivated by ${mn}.` });
       });
 
-      // ── L × Mo  (exact location name + motive) ── 1 row
-      // "The person at the Kitchen was motivated by greed."
-      {
-        const { l, m } = R(ord[3]);
-        body.push(`The person at the ${l.name} was motivated by ${m.name.toLowerCase()}.`);
+      // ── Select clues from each pool ──
+      // Pick `count` entries, preferring different bijection rows (more diverse info),
+      // and never repeating the same text.
+      function pickFromPool(pool, count) {
+        shuffleArr(pool);
+        const chosen = [];
+        const usedRows = new Set();
+        const usedTexts = new Set();
+        // First pass: one clue per bijection row
+        for (const e of pool) {
+          if (chosen.length >= count) break;
+          if (!usedRows.has(e.row) && !usedTexts.has(e.text)) {
+            chosen.push(e.text);
+            usedRows.add(e.row);
+            usedTexts.add(e.text);
+          }
+        }
+        // Second pass: fill remaining slots if pool has more unique texts
+        for (const e of pool) {
+          if (chosen.length >= count) break;
+          if (!usedTexts.has(e.text)) {
+            chosen.push(e.text);
+            usedTexts.add(e.text);
+          }
+        }
+        return chosen;
       }
 
-      // ── S × I  (eye color + material) ── uses ord[2]
-      // Only valid when eye color uniquely identifies this suspect.
-      {
-        const { eye, it } = R(ord[2]);
-        const mat = (it.material || '').toLowerCase();
-        if (eye && mat && oneOf(eyeArr, eye)) body.push(pick([
-          `The ${eye}-eyed suspect had a ${mat} item.`,
-          `The ${mat} item belonged to the ${eye}-eyed suspect.`
-        ]));
-      }
+      const body = [
+        ...pickFromPool(pools.SL, 3),  // 3 location clues  (covers most suspects)
+        ...pickFromPool(pools.SM, 2),  // 2 motive clues
+        ...pickFromPool(pools.SI, 2),  // 2 item clues (non-crime items)
+        ...pickFromPool(pools.IL, 2),  // 2 item-location clues
+        ...pickFromPool(pools.LM, 1),  // 1 location-motive link
+      ];
 
-      // ── S × L  (hair color + io) ── uses ord[1]
-      // Only valid when hair color uniquely identifies this suspect.
-      {
-        const { hair, io } = R(ord[1]);
-        if (hair && oneOf(hairArr, hair)) body.push(pick([
-          `The suspect with ${hair} hair was ${io}.`,
-          `The ${hair}-haired suspect was found ${io}.`
-        ]));
-      }
-
-      // ── S × Mo  (dominant hand + motive) ── uses ord[3]
-      // Only valid when this hand is unique among suspects (skips when everyone is right-handed).
-      {
-        const { hand, m } = R(ord[3]);
-        if (oneOf(handArr, hand)) body.push(pick([
-          `The ${hand}-handed suspect's motive was ${m.name.toLowerCase()}.`,
-          `The ${hand}-handed suspect was motivated by ${m.name.toLowerCase()}.`
-        ]));
-      }
-
-      // ── I × L  (weight + io) ── uses ord[0]
-      // Only valid when this weight class is unique among items (guaranteed duplicate with 3 options, 4 items).
-      {
-        const { wt, io } = R(ord[0]);
-        if (wt && oneOf(wtArr, wt)) body.push(`A ${wt}-weight item was ${io}.`);
-      }
-
-      // ── S × Mo  (zodiac + motive) ── uses ord[0]
-      // Only valid when zodiac sign uniquely identifies this suspect.
-      {
-        const { zodiac, m } = R(ord[0]);
-        if (zodiac && oneOf(zodiacArr, zodiac.toLowerCase())) body.push(pick([
-          `The ${zodiac} suspect's motive was ${m.name.toLowerCase()}.`,
-          `The ${zodiac} suspect was motivated by ${m.name.toLowerCase()}.`
-        ]));
-      }
-
-      // ── S × I  (name + exact item) ── 2 more rows, any suspects
-      // Skipped when the row's item is the crime item — that's reserved for the final clue
-      [ord[0], ord[2]].forEach(i => {
-        if (bij[i].ii === solution.itemIndex) return;
-        const { s, it } = R(i);
-        body.push(pick([
-          `${s.name} had the ${it.name}.`,
-          `The ${it.name} belonged to ${s.name}.`
-        ]));
-      });
-
-      // Shuffle so the order of clues doesn't reveal anything
       shuffleArr(body);
 
       // ── Final clue — always last, always highlighted ──
