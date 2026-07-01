@@ -86,13 +86,7 @@
     .btn-icon { font-size: 22px; }
     .divider { width: 100%; height: 1px; background: rgba(255,255,255,.08); margin: 4px 0; }
     .no-puzzles { font-size: 13px; color: rgba(255,255,255,.35); text-align: center; padding: 4px 0; }
-    .arcade-link {
-      display: inline-block; margin-top: 8px; padding: 7px 16px;
-      border-radius: 12px; background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.45);
-      font-size: 13px; font-weight: 600; text-decoration: none; transition: all .15s;
-    }
-    .arcade-link:active { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+    .arcade-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 14px; border-radius: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.45); font-size: 13px; font-weight: 600; text-decoration: none; }
 
     /* ===== SHARED CHROME ===== */
     .chrome-header {
@@ -1401,12 +1395,18 @@
         ]));
       }
 
+      // ── S × I  (name + exact item) ── 2 more rows, any suspects — no crime reference
+      // Combined with the ord[3] clue above, gives 3 randomised suspect→item facts
+      [ord[0], ord[2]].forEach(i => {
+        const { s, it } = R(i);
+        body.push(pick([
+          `${s.name} had the ${it.name}.`,
+          `The ${it.name} belonged to ${s.name}.`
+        ]));
+      });
+
       // Shuffle so the order of clues doesn't reveal anything
       shuffleArr(body);
-
-      // ── Final reveal — always last ──
-      // "A Candlestick was used to commit the crime."
-      body.push(`A ${items[solution.itemIndex].name} was used to commit the crime.`);
 
       return body;
     }
