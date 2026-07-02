@@ -1323,10 +1323,10 @@
           pools.SI.push({ row: ri, text: pick([`${s.name} had the ${it.name}.`, `The ${it.name} belonged to ${s.name}.`]) });
           // size + material (only if suspect's size is unique)
           if (sz && mat && oneOf(sizeArr, sz))
-            pools.SI.push({ row: ri, text: pick([`The ${sz} suspect had a ${mat} item.`, `The ${mat} item belonged to the ${sz} suspect.`]) });
+            pools.SI.push({ row: ri, text: pick([`The ${sz} suspect had an item made of ${mat}.`, `The item made of ${mat} belonged to the ${sz} suspect.`]) });
           // eye + material (only if eye color is unique)
           if (eye && mat && oneOf(eyeArr, eye))
-            pools.SI.push({ row: ri, text: pick([`The ${eye}-eyed suspect had a ${mat} item.`, `The ${mat} item belonged to the ${eye}-eyed suspect.`]) });
+            pools.SI.push({ row: ri, text: pick([`The ${eye}-eyed suspect had an item made of ${mat}.`, `The item made of ${mat} belonged to the ${eye}-eyed suspect.`]) });
         }
 
         // I×L — item name (always valid)
