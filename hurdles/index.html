@@ -1298,11 +1298,13 @@
         const wt     = (it.weight     || '').toLowerCase();
         const mn     = m.name.toLowerCase();
 
-        // S×L — exact location (always valid: names are unique)
+        // S×L — exact location only (always valid: names are unique)
+        // Using only exact-location clues (not "was indoors/outdoors") guarantees
+        // S→L is fully determinable: 3 picked from 4 rows → 4th by elimination.
+        // "io" hints are dropped because 2 indoor/2 outdoor puzzles become ambiguous
+        // if all picks are io-type with no exact anchor.
         pools.SL.push({ row: ri, text: pick([`${s.name} was at the ${l.name}.`, `${s.name} could be found at the ${l.name}.`]) });
-        // S×L — indoor/outdoor (always valid)
-        pools.SL.push({ row: ri, text: pick([`${s.name} was ${io}.`, `${s.name} was found at ${ioAdj} location.`]) });
-        // S×L — hair attribute (only if unique)
+        // S×L — hair attribute (only if unique) — kept as bonus when applicable
         if (hair && oneOf(hairArr, hair))
           pools.SL.push({ row: ri, text: pick([`The suspect with ${hair} hair was ${io}.`, `The ${hair}-haired suspect was found ${io}.`]) });
 
@@ -1366,9 +1368,9 @@
       }
 
       const body = [
-        ...pickFromPool(pools.SL, 3),  // 3 location clues  (covers most suspects)
-        ...pickFromPool(pools.SM, 2),  // 2 motive clues
-        ...pickFromPool(pools.SI, 2),  // 2 item clues (non-crime items)
+        ...pickFromPool(pools.SL, 3),  // 3 exact-location clues → 4th by elimination → S→L fully determined
+        ...pickFromPool(pools.SM, 3),  // 3 motive clues → 4th by elimination → S→Mo fully determined
+        ...pickFromPool(pools.SI, 2),  // 2 item clues (non-crime) + final clue = 3 → 4th by elimination
         ...pickFromPool(pools.IL, 2),  // 2 item-location clues
         ...pickFromPool(pools.LM, 1),  // 1 location-motive link
       ];
